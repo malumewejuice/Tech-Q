@@ -43,51 +43,40 @@ const Contact = () => {
     setIsSubmitted(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Basic validation
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.message) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields (Name, Email, and Message).",
-        variant: "destructive",
-      });
-      return;
-    }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    setIsSubmitting(true);
+  try {
+    const response = await fetch("https://formspree.io/f/mnqwxyza", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
 
-    try {
-      console.log('Form submitted:', formData);
-      
-      const { data, error } = await supabase.functions.invoke('send-contact-email', {
-        body: formData
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to send email');
-      }
-
-      console.log('Email sent successfully:', data);
-      
+    if (response.ok) {
       setIsSubmitted(true);
-      
       toast({
         title: "Message Sent Successfully!",
-        description: "Thank you for contacting us. We'll get back to you within 24 hours.",
+        description: "Check your Outlook inbox (and spam folder, just in case).",
         duration: 5000,
       });
-      
-    } catch (error: any) {
-      console.error('Error submitting form:', error);
+      resetForm();
+    } else {
       toast({
         title: "Failed to Send Message",
-        description: error.message || "There was an error sending your message. Please try again or contact us directly.",
+        description: "Something went wrong. Please try again later.",
         variant: "destructive",
         duration: 5000,
       });
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    toast({
+      title: "Network Error",
+      description: "Could not connect to Formspree.",
+      variant: "destructive",
+      duration: 5000,
+    });
     } finally {
       setIsSubmitting(false);
     }
