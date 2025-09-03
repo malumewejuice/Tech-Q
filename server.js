@@ -1,55 +1,45 @@
-const express = require('express');
-const nodemailer = require('nodemailer');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-require('dotenv').config();
+const express = require("express");
+const nodemailer = require("nodemailer");
+const cors = require("cors");
+const bodyParser = require("body-parser");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = 5000; // you can change this if needed
 
 // Middleware
-app.use(cors());
-app.use(bodyParser.json());
+app.use(cors()); // allow requests from frontend
+app.use(bodyParser.json()); // parse incoming JSON
 
-// Contact route
-app.post('/contact', async (req, res) => {
-  const { firstName, lastName, email, phone, company, service, message } = req.body;
+// Route to handle contact form
+app.post("/contact", async (req, res) => {
+  const { name, email, message } = req.body;
+
+  // Transporter config for Outlook
+  let transporter = nodemailer.createTransport({
+    service: "hotmail", // Outlook/Hotmail
+    auth: {
+      user: "techqho@outlook.com", // replace with your email
+      pass: "cunokugbeqccdbau", // or App Password if 2FA is enabled
+    },
+  });
+
+  let mailOptions = {
+    from: email,
+    to: "techqho@outlook.com", // where you want to receive messages
+    subject: `New Contact Form Message from ${name}`,
+    text: message,
+  };
 
   try {
-    // Transporter for Outlook
-    let transporter = nodemailer.createTransport({
-      service: 'Outlook',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-
-    // Email content
-    let mailOptions = {
-      from: email,
-      to: process.env.EMAIL_USER, // you receive it here
-      subject: `New Contact Request from ${firstName} ${lastName}`,
-      text: `
-        Name: ${firstName} ${lastName}
-        Email: ${email}
-        Phone: ${phone}
-        Company: ${company}
-        Service: ${service}
-        Message: ${message}
-      `
-    };
-
-    // Send email
     await transporter.sendMail(mailOptions);
-
-    res.status(200).json({ success: true, message: 'Message sent successfully!' });
+    res.status(200).json({ success: true, message: "Message sent successfully!" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Error sending message' });
+    res.status(500).json({ success: false, message: "Failed to send message." });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
+
